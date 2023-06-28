@@ -1,7 +1,7 @@
 import pandas as pd
-import os
-import sys
+import argparse
 import numpy as np
+import yaml
 from pathlib import Path
 import datetime
 import warnings
@@ -301,7 +301,7 @@ def preprocess(baseline, selected, dataset):
 
     # for PFS, event is defined as moment of progression or death
     progressed = []
-    for upn, followup in selected.groupby("upn").statlcont.apply(list).iteritems():
+    for upn, followup in selected.groupby("upn").statlcont.apply(list).items():
         if any([fu in [4, 5] for fu in followup]):
             progressed.append(True)
         else:
@@ -341,65 +341,40 @@ def preprocess(baseline, selected, dataset):
 
     # add age
     if "gebdat" in baseline.columns:
-        baseline["gebjaar"] = baseline["gebdat"].astype(np.datetime64).dt.year
+        baseline["gebjaar"] = baseline["gebdat"].astype("datetime64[ns]").dt.year
     baseline["Age"] = (
-        baseline["start_date"].astype(np.datetime64).dt.year - baseline["gebjaar"]
+        baseline["start_date"].astype("datetime64[ns]").dt.year - baseline["gebjaar"]
     )
 
     return baseline
 
 
-names = {
-    "Export_DMTR_umcu_03082021.xlsx": "umcu",
-    "avl.xlsx": "avl",
-    "umcg.xlsx": "umcg",
-    "0_Export_DMTR_amphia-ziekenhuis-breda_11032021_anoniem.xlsx": "amphia",
-    "Export_DMTR_lumc_26112021Rensanoniem.xlsx": "lumc",
-    "Export_DMTR_maxima-mc-veldhoven_21072021 - geanomiseerd.xlsx": "maxima",
-    "MSt anoniem DMTR.xlsx": "mst",
-    "Export_DMTR_vumc_16112021premiumUMCU.xlsx": "vumc",
-    "Export_DMTR_umc-st-radboud_07062021.xlsx": "radboud",
-    "Export_DMTR_stichting-isala-klinieken-zwolle_28072021.xlsx": "isala",
-    "Export_DMTR_zuyderland_25052021.xlsx": "zuyderland",
-}
+parser = argparse.ArgumentParser()
+parser.add_argument("config_name")
 
 if __name__ == "__main__":
-    # dataset = pd.read_excel(Path(sys.argv[1]))
+    args = parser.parse_args()
 
-    datasets = os.listdir(
-        r"C:\Users\user\repos\PREMIUM\code\radiomics_paper\data\raw_dmtr"
-    )
-    for dataset_fp in datasets:
-        dataset = pd.read_excel(
-            r"C:\Users\user\repos\PREMIUM\code\radiomics_paper\data\raw_dmtr\{}".format(
-                dataset_fp
-            )
-        )
+    with open(f"/home/rens/repos/premium_selection/config/{args.config_name}") as f:
+        config = yaml.safe_load(f)
+
+    for dataset_fp in Path(config["input_folder"]).iterdir():
+        dataset = pd.read_excel(dataset_fp)
 
         print("#" * 100)
-        print("Processing dataset {} ...".format(dataset_fp))
-        name = names[dataset_fp]
+        print("Processing dataset {} ...".format(dataset_fp.name))
+        name = config["names"][dataset_fp.name]
 
         dataset["upn"] = dataset["upn"].astype(str)
 
         selected = select(dataset)
         baseline = find_baseline_entry(selected)
         baseline = preprocess(baseline, selected, dataset)
-
-        # baseline.to_csv('{}.csv'.format(sys.argv[2]))
-        baseline.to_csv(
-            r"C:\Users\user\repos\PREMIUM\code\radiomics_paper\data\processed_dmtr\{}.csv".format(
-                name
-            )
-        )
+        baseline.to_csv(Path(config["intermediate_output_folder"]) / (name + ".csv"))
 
         possible = select_possible(dataset)
         possible_baseline = find_baseline_entry(possible)
         possible_baseline = preprocess(possible_baseline, possible, dataset)
-
-        # possible_baseline.to_csv('{}_possible.csv'.format(sys.argv[2]))
         possible_baseline.to_csv(
-            r"C:\Users\user\repos\PREMIUM\code\radiomics_paper\data\processed_dmtr\{}_possible.csv".format(
-                name
-            )
+            Path(config["intermediate_output_folder"]) / (name + "_possible.csv")
         )
