@@ -1,8 +1,6 @@
 # premium_selection
 DMTR preprocessing and patient selection tool for PREMIUM project. 
 
-## Overview
-
 ## Usage
 ### Step 0. Setting up the repository
 0.1 Clone the repository
