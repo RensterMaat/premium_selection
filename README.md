@@ -43,7 +43,7 @@ python src/01_preprocess.py config_template.yaml
 ### Step 3. Select which patients to add
 Step 2 resulted in 2 .csv-files per center in the intermediate_output_folder: one called <center_name>.csv and one called <center_name>_possible.csv. The first contains patients which should definitely be included. The second contains patients who received 'other' therapy, but who otherwise satisfy all inclusion criteria. You will need to manually check if the therapy that they received falls inside the inclusion criteria. The information you need to determine this is in the column "typandst". 
 
-Add the ids of the patients that should be included to the config_file under "include_with_other_therapy" like so:
+Add the ids of the patients (column "upn") that should be included to the config_file under "include_with_other_therapy" like so:
 
 ```
 include_with_other_therapy:
@@ -52,4 +52,36 @@ include_with_other_therapy:
   "center_C.csv": [patient_id5, patient_id6]
 ```
 
+### Step 4. Prepare for anonymization
+4.1 Create a .csv-file with two columns: "upn" and "premium_id". This file should contain a row for every patient which does not yet have a study id:
+
+```
+upn,premium_id
+12345678,PREM_AB_001
+```
+
+4.2 Add the path of the coding csv file created under 4.1 to the config:
+
+```
+upn_to_study_coding: /path/to/coding_file.csv
+
+```
+
+4.3 Specify which centers are already encoded:
+
+```
+already_encoded: ["center_A.csv", "center_B.csv"]
+```
+
+4.4 Specify the path to the final output file:
+```
+output_file: /path/to/output_file.csv
+```
+
+### Step 5. Run anonymization
+Run the following command, with the filename of the config you created under 1.2 as an argument:
+
+```
+python src/02_anonymize.py config_template.yaml
+```
 

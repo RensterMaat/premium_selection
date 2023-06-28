@@ -23,7 +23,7 @@ datasets = [
 ]
 
 coding = pd.read_csv(config["upn_to_study_coding"]).set_index("upn")
-already_encoded = ["lumc.csv", "maxima.csv", "mst.csv", "umcg.csv"]
+already_encoded = config['already_encoded']
 
 
 # loop through the preprocessed dataframe of every center

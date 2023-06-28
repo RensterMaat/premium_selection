@@ -6,5 +6,7 @@ output_file:
 names:
     "original file excel name": "center name"
 
+already_encoded: ["center_A.csv", ]
+
 include_with_other_therapy:
   "center_name.csv": ['ids to include from this center',]
