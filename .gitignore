@@ -1,5 +1,8 @@
-config
-data
+config/coding.csv
+config/config_original.yaml
+config/config_updated.yaml
+data/original
+data/updated
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

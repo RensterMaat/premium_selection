@@ -1,0 +1,10 @@
+input_folder: 
+intermediate_output_folder: 
+upn_to_study_coding:
+output_file:
+
+names:
+    "original file excel name": "center name"
+
+include_with_other_therapy:
+  "center_name.csv": ['ids to include from this center',]
