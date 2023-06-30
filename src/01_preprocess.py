@@ -355,7 +355,7 @@ parser.add_argument("config_name")
 if __name__ == "__main__":
     args = parser.parse_args()
 
-    with open(f"/home/rens/repos/premium_selection/config/{args.config_name}") as f:
+    with open(f"../config/{args.config_name}") as f:
         config = yaml.safe_load(f)
 
     for dataset_fp in Path(config["input_folder"]).iterdir():
