@@ -26,7 +26,7 @@ def merge_sheets(f, save_path):
         sheet = pd.read_excel(f, sheet_name=sheet_name).set_index('episode_uri')
         df = df.join(sheet, on='episode_uri', rsuffix=f"_{sheet_name}")
 
-    df.to_excel(save_path)
+    df.to_csv(save_path)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("config_name")
@@ -40,6 +40,6 @@ if __name__ == "__main__":
     for multiple_sheets_file in Path(config['multiple_sheet_files_folder']).iterdir():
         print(f'Merging {multiple_sheets_file.name}')
 
-        save_path = Path(config['input_folder']) / multiple_sheets_file.name
+        save_path = Path(config['input_folder']) / (multiple_sheets_file.stem + '.csv')
 
         merge_sheets(multiple_sheets_file, save_path)

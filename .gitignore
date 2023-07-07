@@ -4,7 +4,9 @@ config/config_updated.yaml
 config/config_template.yaml
 data/original
 data/updated
+data/other
 .vscode
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

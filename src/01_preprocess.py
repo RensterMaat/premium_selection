@@ -46,8 +46,10 @@ def select(dataset):
 
     # exclude patients with start date before 1-1-2016
     before = len(pd.unique(selected["upn"]))
-    selected["start_date"] = selected[["startpd", "startipnicomb", "startandst"]].min(
-        axis=1
+    selected["start_date"] = (
+        pd.to_datetime(selected[["startpd", "startipnicomb", "startandst"]].stack())
+        .unstack()
+        .min(axis=1)
     )
     selected = selected.loc[~(selected["start_date"] < np.datetime64("2016-01-01"))]
     after = len(pd.unique(selected["upn"]))
@@ -81,8 +83,10 @@ def select_possible(dataset):
     ]
 
     # exclude patients with start date before 1-1-2016
-    possible["start_date"] = possible[["startpd", "startipnicomb", "startandst"]].min(
-        axis=1
+    possible["start_date"] = (
+        pd.to_datetime(possible[["startpd", "startipnicomb", "startandst"]].stack())
+        .unstack()
+        .min(axis=1)
     )
     possible = possible.loc[~(possible["start_date"] < np.datetime64("2016-01-01"))]
 
@@ -203,9 +207,13 @@ def find_baseline_entry(dataset):
     # take the first entry in the episode
     starting_dates = (
         # dataset[~dataset["datlcont"].isna()].groupby("upn").datlcont.apply(min)
-        dataset.groupby("upn").datlcont.apply(min)
+        dataset.groupby("upn")
+        .datlcont.apply(list)
+        .apply(lambda x: [pd.to_datetime(el) for el in x])
+        .apply(min)
     )
     upn_vs_start = list(zip(starting_dates.index, starting_dates))
+    dataset["datlcont"] = pd.to_datetime(dataset["datlcont"])
     baseline = dataset[
         dataset[["upn", "datlcont"]].apply(tuple, axis=1).isin(upn_vs_start)
     ]
@@ -291,10 +299,16 @@ def preprocess(baseline, selected, dataset):
     )
 
     # end of followup is the latter of moment of death or last contact
-    baseline["end_of_fu"] = baseline[["last_contact", "datovl"]].max(axis=1)
+    baseline["end_of_fu"] = (
+        pd.to_datetime(baseline[["last_contact", "datovl"]].stack())
+        .unstack()
+        .max(axis=1)
+    )
 
     # calculate duration of followup
-    baseline["fu_OS"] = baseline["end_of_fu"] - baseline["start_date"]
+    baseline["fu_OS"] = pd.to_datetime(baseline["end_of_fu"]) - pd.to_datetime(
+        baseline["start_date"]
+    )
 
     # for OS, event is defined as death
     baseline["event_OS"] = ~baseline["datovl"].isnull()
@@ -312,9 +326,9 @@ def preprocess(baseline, selected, dataset):
     baseline["date_of_progression"] = (
         selected[selected["statlcont"].isin([4, 5])].groupby("upn")["datlcont"].min()
     )
-    baseline["time_to_progression"] = (
-        baseline["date_of_progression"] - baseline["start_date"]
-    )
+    baseline["time_to_progression"] = pd.to_datetime(
+        baseline["date_of_progression"]
+    ) - pd.to_datetime(baseline["start_date"])
     baseline["fu_PFS"] = baseline[["time_to_progression", "fu_OS"]].min(axis=1)
 
     # format column names and variable names
@@ -358,8 +372,16 @@ if __name__ == "__main__":
     with open(f"../config/{args.config_name}") as f:
         config = yaml.safe_load(f)
 
+    # with open(
+    #     r"V:\Medische-oncologie\OncologieOnderzoek\Melanoom\PREMIUM\premium_selection\config\config_original.yaml"
+    # ) as f:
+    #     config = yaml.safe_load(f)
+
     for dataset_fp in Path(config["input_folder"]).iterdir():
-        dataset = pd.read_excel(dataset_fp)
+        if dataset_fp.name.endswith(".xlsx"):
+            dataset = pd.read_excel(dataset_fp)
+        else:
+            dataset = pd.read_csv(dataset_fp)
 
         print("#" * 100)
         print("Processing dataset {} ...".format(dataset_fp.name))
